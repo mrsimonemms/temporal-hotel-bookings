@@ -1,0 +1,17 @@
+{
+  "name": "devcontainer",
+  "image": "ghcr.io/mrsimonemms/devcontainers/temporal_min",
+  "features": {
+    "ghcr.io/guiyomh/features/goreleaser:0": {},
+    "ghcr.io/devcontainers/features/go:1": {}
+  },
+  "customizations": {
+    "vscode": {
+      "extensions": [],
+      "settings": {}
+    }
+  },
+  "containerEnv": {
+    "GIT_REPO": "github.com/mrsimonemms/temporal-hotel-bookings"
+  }
+}

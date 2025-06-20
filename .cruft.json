@@ -1,0 +1,19 @@
+{
+  "template": "https://github.com/mrsimonemms/new",
+  "commit": "12e795a5cac56f7b4525274df94dbd947930187f",
+  "checkout": null,
+  "context": {
+    "cookiecutter": {
+      "project_name": "temporal-hotel-bookings",
+      "description": "Book a hotel with different payment terms",
+      "author": "Simon Emms <simon@simonemms.com>",
+      "repo": "github.com/mrsimonemms/temporal-hotel-bookings",
+      "_template": "https://github.com/mrsimonemms/new",
+      "_commit": "12e795a5cac56f7b4525274df94dbd947930187f"
+    }
+  },
+  "directory": "golang",
+  "skip": [
+    ".git"
+  ]
+}
