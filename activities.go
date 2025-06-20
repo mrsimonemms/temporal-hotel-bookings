@@ -16,12 +16,41 @@
 
 package temporalhotelbookings
 
-import "context"
+import (
+	"context"
+	"math/rand/v2"
+	"strconv"
+	"time"
+
+	"go.temporal.io/sdk/activity"
+)
 
 type activities struct{}
 
-func (a *activities) CreateBooking(ctx context.Context, data BookInput) (*BookResult, error) {
-	return nil, nil
+func (a *activities) PayHotel(ctx context.Context, data *PayHotelInput) (*PayHotelResult, error) {
+	logger := activity.GetLogger(ctx)
+	logger.Info("Paying hotel")
+
+	return &PayHotelResult{}, nil
+}
+
+// Reserve the hotel booking
+func (a *activities) ReserveHotel(ctx context.Context, data *ReserveHotelInput) (*ReserveHotelResult, error) {
+	logger := activity.GetLogger(ctx)
+	logger.Info("Reserve hotel", "hotelId", data.HotelID)
+
+	// Simulate a time delay
+	time.Sleep(time.Second)
+
+	if err := SimulateFailure(ctx); err != nil {
+		return nil, err
+	}
+
+	logger.Info("Hotel successfully reserved")
+	return &ReserveHotelResult{
+		//nolint:gosec
+		BookingID: strconv.Itoa(rand.Int()),
+	}, nil
 }
 
 func NewActivities() (*activities, error) {

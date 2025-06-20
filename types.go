@@ -16,10 +16,50 @@
 
 package temporalhotelbookings
 
-type BookInput struct{}
+import "time"
 
-type BookResult struct{}
+type BookHotelWorkflowInput struct {
+	HotelID          string    // Nominal ID for hotel
+	TotalCostInPence int32     // Cost of the hotel in pence
+	CheckInDate      time.Time // Date of check-in
+	CheckOutDate     time.Time // Date of check-out
+	PayOnCheckIn     bool      // If paying on check-in, no pre-payment available
 
-type BookHotelWorkflowInput struct{}
+	// If not paying on check-in, pre-payment can be may any time between date
+	// of booking and day before check-in date
+	PrePaymentDate time.Time
 
-type BookHotelWorkflowResult struct{}
+	CardDetails CardDetails // Card details are required for all bookings
+}
+
+type BookHotelWorkflowResult struct {
+	BookingID   string
+	HotelID     string
+	PaymentDate time.Time
+}
+
+type CardDetails struct {
+	Number       string
+	ExpiryMonth  int
+	ExpiryYear   int
+	SecurityCode int
+}
+
+type PayHotelInput struct {
+	PaymentDate      time.Time
+	CardDetails      CardDetails
+	BookingID        string
+	TotalCostInPence int32
+}
+
+type PayHotelResult struct{}
+
+type ReserveHotelInput struct {
+	HotelID      string
+	CheckInDate  time.Time
+	CheckOutDate time.Time
+}
+
+type ReserveHotelResult struct {
+	BookingID string
+}

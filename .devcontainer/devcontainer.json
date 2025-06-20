@@ -7,11 +7,16 @@
   },
   "customizations": {
     "vscode": {
-      "extensions": [],
+      "extensions": [
+        "tamasfe.even-better-toml"
+      ],
       "settings": {}
     }
   },
   "containerEnv": {
     "GIT_REPO": "github.com/mrsimonemms/temporal-hotel-bookings"
+  },
+  "postCreateCommand": {
+    "install-air": "go install github.com/air-verse/air@latest"
   }
 }

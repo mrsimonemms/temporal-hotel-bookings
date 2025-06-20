@@ -34,10 +34,12 @@ func main() {
 
 	w := worker.New(c, "hotel-bookings", worker.Options{})
 
-	w.RegisterWorkflow(temporalhotelbookings.BootHotel)
+	w.RegisterWorkflow(temporalhotelbookings.BookHotel)
+	w.RegisterWorkflow(temporalhotelbookings.PayHotel)
 
 	activities, err := temporalhotelbookings.NewActivities()
 	if err != nil {
+		//nolint:gocritic
 		log.Fatalln("Unable to create activities", err)
 	}
 	w.RegisterActivity(activities)
