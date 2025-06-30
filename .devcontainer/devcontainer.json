@@ -3,18 +3,26 @@
   "image": "ghcr.io/mrsimonemms/devcontainers/temporal_min",
   "features": {
     "ghcr.io/guiyomh/features/goreleaser:0": {},
-    "ghcr.io/devcontainers/features/go:1": {}
+    "ghcr.io/devcontainers/features/go:1": {},
+    "ghcr.io/devcontainers/features/node:1": {}
   },
+  "forwardPorts": [
+    5173,
+    8233
+  ],
   "customizations": {
     "vscode": {
       "extensions": [
-        "tamasfe.even-better-toml"
+        "tamasfe.even-better-toml",
+        "esbenp.prettier-vscode",
+        "svelte.svelte-vscode"
       ],
       "settings": {}
     }
   },
   "containerEnv": {
-    "GIT_REPO": "github.com/mrsimonemms/temporal-hotel-bookings"
+    "GIT_REPO": "github.com/mrsimonemms/temporal-hotel-bookings",
+    "VITE_HOST": "0.0.0.0"
   },
   "postCreateCommand": {
     "install-air": "go install github.com/air-verse/air@latest"

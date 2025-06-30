@@ -54,3 +54,25 @@ jobs:
         uses: golangci/golangci-lint-action@v8
 
       - uses: pre-commit/action@v3.0.1
+
+  web:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: ./web
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up NodeJS
+        uses: actions/setup-node@v4
+        with:
+          node-version: lts/*
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Test
+        run: npm run lint
+
+      - name: Build
+        run: npm run build
