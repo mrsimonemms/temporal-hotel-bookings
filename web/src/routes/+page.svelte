@@ -15,6 +15,7 @@
 -->
 
 <script lang="ts">
+  import { goto } from '$app/navigation';
   import { DateTime } from 'luxon';
 
   interface IRate {
@@ -22,8 +23,9 @@
     name: string;
     description: string;
     discount: number;
-    total: number;
-    paymentDate: Date;
+    totalInPence: number;
+    payOnCheckIn?: boolean;
+    prePaymentDate?: Date;
   }
 
   function calculateMinCheckoutDate(date: string): string {
@@ -34,8 +36,9 @@
   }
 
   function calculateRates(checkinStr: string, checkoutStr: string): IRate[] {
+    const rates: IRate[] = [];
     if (checkinStr === '' || checkoutStr === '') {
-      return [];
+      return rates;
     }
 
     const checkin = DateTime.fromISO(checkinStr).set({
@@ -52,39 +55,47 @@
     const { days: daysTillCheckin } = checkin.diff(today, ['day']).toObject();
 
     if (!stayInDays || !daysTillCheckin) {
-      return [];
+      return rates;
     }
 
-    return [
-      {
-        id: 'flex',
-        name: 'Flex',
-        description: 'Pay on arrival.',
-        total: dailyPrice * stayInDays,
-        discount: 0,
-        paymentDate: checkin.toJSDate(),
-      },
-      {
-        id: 'standard',
-        name: 'Standard',
-        description: 'Pay 2 days before arrival.',
-        total: dailyPrice * 0.9 * stayInDays, // Offer 10% discount
-        discount: 10,
-        paymentDate: checkin.plus({ days: -2 }).toJSDate(),
-      },
-      {
-        id: 'nonflex',
-        name: 'Non-Flex',
-        description: 'Pay now.',
-        total: dailyPrice * 0.8 * stayInDays, // Offer 20% discount
-        discount: 20,
-        paymentDate: DateTime.now()
-          .set({ hour: 15, minute: 0, second: 0, millisecond: 0 })
-          .toJSDate(),
-      },
-    ].filter((rate) => {
+    rates.push(
+      ...[
+        {
+          id: 'flex',
+          name: 'Flex',
+          description: 'Pay on arrival.',
+          totalInPence: dailyPriceInPence * stayInDays,
+          discount: 0,
+          payOnCheckIn: true,
+        },
+        {
+          id: 'standard',
+          name: 'Standard',
+          description: 'Pay 2 days before arrival.',
+          totalInPence: dailyPriceInPence * 0.9 * stayInDays, // Offer 10% discount
+          discount: 10,
+          prePaymentDate: checkin.plus({ days: -2 }).toJSDate(),
+        },
+        {
+          id: 'nonflex',
+          name: 'Non-Flex',
+          description: 'Pay now.',
+          totalInPence: dailyPriceInPence * 0.8 * stayInDays, // Offer 20% discount
+          discount: 20,
+          prePaymentDate: DateTime.now()
+            .set({ hour: 15, minute: 0, second: 0, millisecond: 0 })
+            .toJSDate(),
+        },
+      ],
+    );
+
+    return rates.filter((rate) => {
+      if (rate.payOnCheckIn || !rate.prePaymentDate) {
+        return true;
+      }
+
       // Disable if payment date is in the past, or less than 2 days until check-in
-      const target = DateTime.fromJSDate(rate.paymentDate).set({
+      const target = DateTime.fromJSDate(rate.prePaymentDate).set({
         hour: 15,
       });
 
@@ -104,28 +115,51 @@
     });
   }
 
-  function submit(rate: IRate) {
-    console.log({
-      rate: {
-        id: rate.id,
+  async function submit(rate: IRate) {
+    loading = true;
+    const data = {
+      hotelId: '12345',
+      totalCostInPence: rate.totalInPence,
+      checkInDate: DateTime.fromISO(checkin).toJSDate(),
+      checkOutDate: DateTime.fromISO(checkout).toJSDate(),
+      payOnCheckIn: rate.payOnCheckIn ?? false,
+      prePaymentDate: rate.prePaymentDate,
+      cardDetails: {
+        number: '5555555555554444',
+        expiryMonth: 12,
+        expiryYear: new Date().getFullYear() + 3,
+        securityCode: 123,
       },
-      checkin,
-      checkout,
-      rates,
+    };
+
+    const response = await fetch('/api/reservation', {
+      method: 'POST',
+      body: JSON.stringify(data),
     });
+
+    if (!response.ok) {
+      console.log(response);
+      loading = false;
+      err = response.statusText;
+      return;
+    }
+
+    const res = await response.json();
+
+    goto(`/booking/${res.bookingId}`);
   }
 
-  const dailyPrice = 150;
+  const dailyPriceInPence = 15000;
 
   // Minimum booking date is tomorrow
   const minDate = DateTime.now().plus({ day: 1 });
   let minCheckoutDate = $state(minDate.plus({ day: 1 }).toISODate());
 
-  let selectedRate: IRate | undefined;
-
+  let err: string = $state('');
   let checkin: string = $state('');
   let checkout: string = $state('');
   let rates: IRate[] = $state([]);
+  let loading: boolean = $state(false);
 </script>
 
 <h1 class="title">Welcome to Hilbert's Hotel</h1>
@@ -133,6 +167,13 @@
 
 <div class="columns">
   <div class="column is-half">
+    {#if err}
+      <article class="message is-danger">
+        <div class="message-header">Error</div>
+        <div class="message-body">{err}</div>
+      </article>
+    {/if}
+
     <div class="field">
       <label class="label" for="checkin">Check-in date</label>
       <div class="control">
@@ -184,7 +225,7 @@
               </div>
               <div class="column is-3 has-text-right">
                 <p class="has-text-weight-semibold">
-                  &pound;{rate.total}
+                  &pound;{rate.totalInPence / 100}
                 </p>
                 {#if rate.discount > 0}
                   <p class="has-text-danger">
@@ -199,6 +240,7 @@
                       type="submit"
                       onclick={() => submit(rate)}
                       class="button is-link"
+                      class:is-loading={loading}
                     >
                       Book
                     </button>

@@ -19,47 +19,47 @@ package temporalhotelbookings
 import "time"
 
 type BookHotelWorkflowInput struct {
-	HotelID          string    // Nominal ID for hotel
-	TotalCostInPence int32     // Cost of the hotel in pence
-	CheckInDate      time.Time // Date of check-in
-	CheckOutDate     time.Time // Date of check-out
-	PayOnCheckIn     bool      // If paying on check-in, no pre-payment available
+	HotelID          string    `json:"hotelId"`          // Nominal ID for hotel
+	TotalCostInPence int32     `json:"totalCostInPence"` // Cost of the hotel in pence
+	CheckInDate      time.Time `json:"checkInDate"`      // Date of check-in
+	CheckOutDate     time.Time `json:"checkOutDate"`     // Date of check-out
+	PayOnCheckIn     bool      `json:"payOnCheckIn"`     // If paying on check-in, no pre-payment available
 
 	// If not paying on check-in, pre-payment can be may any time between date
 	// of booking and day before check-in date
-	PrePaymentDate time.Time
+	PrePaymentDate time.Time `json:"prePaymentDate"`
 
-	CardDetails CardDetails // Card details are required for all bookings
+	CardDetails CardDetails `json:"cardDetails"` // Card details are required for all bookings
 }
 
 type BookHotelWorkflowResult struct {
-	BookingID   string
-	HotelID     string
-	PaymentDate time.Time
+	BookingID   string    `json:"bookingId"`
+	HotelID     string    `json:"hotelId"`
+	PaymentDate time.Time `json:"paymentDate"`
 }
 
 type CardDetails struct {
-	Number       string
-	ExpiryMonth  int
-	ExpiryYear   int
-	SecurityCode int
+	Number       string `json:"number"`
+	ExpiryMonth  int    `json:"expiryMonth"`
+	ExpiryYear   int    `json:"expiryYear"`
+	SecurityCode int    `json:"securityCode"`
 }
 
 type PayHotelInput struct {
-	PaymentDate      time.Time
-	CardDetails      CardDetails
-	BookingID        string
-	TotalCostInPence int32
+	PaymentDate      time.Time   `json:"paymentDate"`
+	CardDetails      CardDetails `json:"cardDetails"`
+	BookingID        string      `json:"bookingId"`
+	TotalCostInPence int32       `json:"totalCostPence"`
 }
 
 type PayHotelResult struct{}
 
 type ReserveHotelInput struct {
-	HotelID      string
-	CheckInDate  time.Time
-	CheckOutDate time.Time
+	HotelID      string    `json:"hotelId"`
+	CheckInDate  time.Time `json:"checkInDate"`
+	CheckOutDate time.Time `json:"checkOutDate"`
 }
 
 type ReserveHotelResult struct {
-	BookingID string
+	BookingID string `json:"bookingId"`
 }

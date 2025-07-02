@@ -2,7 +2,10 @@ module github.com/mrsimonemms/temporal-hotel-bookings
 
 go 1.24.2
 
-require go.temporal.io/sdk v1.34.0
+require (
+	go.temporal.io/api v1.50.0
+	go.temporal.io/sdk v1.34.0
+)
 
 require (
 	github.com/davecgh/go-spew v1.1.1 // indirect
@@ -17,7 +20,6 @@ require (
 	github.com/robfig/cron v1.2.0 // indirect
 	github.com/stretchr/objx v0.5.2 // indirect
 	github.com/stretchr/testify v1.10.0 // indirect
-	go.temporal.io/api v1.50.0 // indirect
 	golang.org/x/net v0.41.0 // indirect
 	golang.org/x/sync v0.15.0 // indirect
 	golang.org/x/sys v0.33.0 // indirect

@@ -14,12 +14,21 @@
  * limitations under the License.
  */
 
-import type { Actions } from './$types';
+import { ensureConnection } from '$lib/server/temporal';
+import { json } from '@sveltejs/kit';
+import { nanoid } from 'nanoid';
+import type { RequestHandler } from './$types';
 
-export const actions = {
-  default: async ({ request }) => {
-    const data = await request.formData();
+export const POST: RequestHandler = async ({ request }) => {
+  const temporal = await ensureConnection();
 
-    console.log(data);
-  },
-} satisfies Actions;
+  const data = await request.json();
+
+  const handle = await temporal.workflow.start('BookHotel', {
+    taskQueue: 'hotel-bookings',
+    args: [data],
+    workflowId: `book-${nanoid()}`,
+  });
+
+  return json(await handle.result());
+};
