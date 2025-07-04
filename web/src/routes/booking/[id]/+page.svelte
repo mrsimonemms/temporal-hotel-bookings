@@ -19,7 +19,36 @@
   import type { PageProps } from './$types';
 
   let { data }: PageProps = $props();
+  let err: string = $state('');
+  let isPaid: boolean = $state(data.booking.isPaid);
+  let loading: boolean = $state(false);
+
+  async function checkin() {
+    loading = true;
+    const response = await fetch(`/api/reservation`, {
+      method: 'PUT',
+      body: JSON.stringify({
+        id: data.booking.id,
+      }),
+    });
+
+    if (!response.ok) {
+      err = response.statusText;
+      return;
+    }
+
+    await response.json();
+
+    isPaid = true;
+  }
 </script>
+
+{#if err}
+  <article class="message is-danger">
+    <div class="message-header">Error</div>
+    <div class="message-body">{err}</div>
+  </article>
+{/if}
 
 <div class="content">
   <p>Thanks for your booking</p>
@@ -43,10 +72,16 @@
   </dl>
 
   <p>
-    {#if data.booking.isPaid}
-      Paid with thanks
+    {#if isPaid}
+      You're checked into Room &infin;. Happy walking
     {:else}
-      <button class="button is-fullwidth is-primary">Check in now</button>
+      <button
+        class="button is-fullwidth is-primary"
+        class:is-loading={loading}
+        onclick={() => checkin()}
+      >
+        Check in now
+      </button>
     {/if}
   </p>
 </div>

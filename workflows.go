@@ -17,6 +17,7 @@
 package temporalhotelbookings
 
 import (
+	"errors"
 	"fmt"
 	"time"
 
@@ -88,21 +89,42 @@ func PayHotel(ctx workflow.Context, data *PayHotelInput) (*PayHotelResult, error
 		ScheduleToCloseTimeout: time.Minute,
 	})
 
+	timerCtx, cancelHandler := workflow.WithCancel(ctx)
+
+	// Declare a new selector
+	selector := workflow.NewSelector(ctx)
+
+	// Configure a signal to cancel the timer
+	channel := workflow.GetSignalChannel(ctx, "check-in")
+	selector.AddReceive(channel, func(c workflow.ReceiveChannel, more bool) {
+		// Run the receiver to clear the signal - we don't receive any data
+		c.Receive(ctx, nil)
+
+		logger.Info("Check in received - cancelling timer")
+		cancelHandler()
+	})
+
+	// Activate the selectors
+	selector.Select(ctx)
+
 	// Calculate the delay until payment is taken
 	t := time.Now().UTC()
 	delay := max(data.PaymentDate.UTC().Sub(t), 0)
 	logger.Info("Delaying workflow", "time", data.PaymentDate, "delay", delay)
 
 	// Activate the sleep
-	if err := workflow.Sleep(ctx, delay); err != nil {
-		logger.Error("Error sleeping payment")
-		return nil, fmt.Errorf("error sleeping payment: %w", err)
+	if err := workflow.Sleep(timerCtx, delay); err != nil {
+		// Allow sleep to be cancelled
+		if !errors.Is(err, workflow.ErrCanceled) {
+			logger.Error("Error sleeping payment")
+			return nil, fmt.Errorf("error sleeping payment: %w", err)
+		}
 	}
 
 	var a *activities
 
 	var result *PayHotelResult
-	if err := workflow.ExecuteActivity(ctx, a.PayHotel).Get(ctx, &result); err != nil {
+	if err := workflow.ExecuteActivity(ctx, a.PayHotel, data).Get(ctx, &result); err != nil {
 		logger.Error("Error paying hotel", "error", err)
 		return nil, fmt.Errorf("error paying hotel: %w", err)
 	}

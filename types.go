@@ -52,7 +52,9 @@ type PayHotelInput struct {
 	TotalCostInPence int32       `json:"totalCostPence"`
 }
 
-type PayHotelResult struct{}
+type PayHotelResult struct {
+	TransactionID string `json:"transactionId"`
+}
 
 type ReserveHotelInput struct {
 	HotelID      string    `json:"hotelId"`

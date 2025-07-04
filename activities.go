@@ -22,16 +22,28 @@ import (
 	"strconv"
 	"time"
 
+	"github.com/google/uuid"
 	"go.temporal.io/sdk/activity"
 )
 
 type activities struct{}
 
+// Pay the hotel
 func (a *activities) PayHotel(ctx context.Context, data *PayHotelInput) (*PayHotelResult, error) {
 	logger := activity.GetLogger(ctx)
 	logger.Info("Paying hotel")
 
-	return &PayHotelResult{}, nil
+	// Simulate a time delay
+	time.Sleep(time.Second * 5)
+
+	if err := SimulateFailure(ctx); err != nil {
+		return nil, err
+	}
+
+	logger.Info("Hotel successfully paid")
+	return &PayHotelResult{
+		TransactionID: uuid.NewString(),
+	}, nil
 }
 
 // Reserve the hotel booking
