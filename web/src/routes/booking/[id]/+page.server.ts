@@ -14,35 +14,20 @@
  * limitations under the License.
  */
 
-import { Low } from 'lowdb';
-import { JSONFilePreset } from 'lowdb/node';
+import { ensureDB } from '$lib/server/db';
+import { redirect } from '@sveltejs/kit';
+import type { PageServerLoad } from './$types';
 
-export type Booking = {
-  id: string;
-  temporalId: string;
-  paymentDate: string;
-  totalCostPence: number;
-  payOnCheckIn: boolean;
-  prePaymentDate: boolean;
-  isPaid: boolean;
-  checkIn: string;
-  checkOut: string;
-};
+export const load: PageServerLoad = async ({ params }) => {
+  const db = await ensureDB();
 
-export type Data = {
-  bookings: Booking[];
-};
+  const booking = db.data.bookings.find(({ id }) => id === params.id);
 
-// Handle singleton
-let db: Low<Data>;
-
-export async function ensureDB(): Promise<Low<Data>> {
-  if (!db) {
-    const defaultData: Data = { bookings: [] };
-
-    db = await JSONFilePreset('db.json', defaultData);
-    await db.write();
+  if (!booking) {
+    return redirect(302, '/');
   }
 
-  return db;
-}
+  return {
+    booking,
+  };
+};

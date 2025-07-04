@@ -47,11 +47,11 @@ export const POST: RequestHandler = async ({ request }) => {
   db.data.bookings.push({
     id: booking.bookingId,
     temporalId: workflowId,
-    paymentDate: new Date(booking.paymentDate),
+    paymentDate: new Date(booking.paymentDate).toString(),
     totalCostPence: data.totalCostInPence,
     payOnCheckIn: data.payOnCheckIn,
     prePaymentDate: data.prePaymentDate,
-    isPaid: data.payOnCheckIn,
+    isPaid: !data.payOnCheckIn,
     checkIn: data.checkInDate,
     checkOut: data.checkOutDate,
   });

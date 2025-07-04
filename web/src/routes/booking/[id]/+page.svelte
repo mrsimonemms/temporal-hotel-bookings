@@ -14,4 +14,39 @@
   ~ limitations under the License.
 -->
 
-hello
+<script lang="ts">
+  import { DateTime } from 'luxon';
+  import type { PageProps } from './$types';
+
+  let { data }: PageProps = $props();
+</script>
+
+<div class="content">
+  <p>Thanks for your booking</p>
+  <dl>
+    <dt>Check-in Date:</dt>
+    <dd>
+      {DateTime.fromISO(data.booking.checkIn).toLocaleString(
+        DateTime.DATE_MED_WITH_WEEKDAY,
+      )}
+    </dd>
+
+    <dt>Check-out Date:</dt>
+    <dd>
+      {DateTime.fromISO(data.booking.checkOut).toLocaleString(
+        DateTime.DATE_MED_WITH_WEEKDAY,
+      )}
+    </dd>
+
+    <dt>Total cost:</dt>
+    <dd>&pound;{data.booking.totalCostPence / 100}</dd>
+  </dl>
+
+  <p>
+    {#if data.booking.isPaid}
+      Paid with thanks
+    {:else}
+      <button class="button is-fullwidth is-primary">Check in now</button>
+    {/if}
+  </p>
+</div>

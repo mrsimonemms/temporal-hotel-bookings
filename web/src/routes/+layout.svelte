@@ -30,6 +30,33 @@
 
 <section class="section">
   <div class="container">
-    {@render children()}
+    <h1 class="title">Welcome to Hilbert's Hotel</h1>
+    <h2 class="subtitle">The world's best hotel with infinite rooms</h2>
+
+    <div class="columns">
+      <div class="column is-half">
+        {@render children()}
+      </div>
+
+      <div class="column is-half">
+        <figure class="image is-3-by-2">
+          <img
+            src="/img/hotel-room.jpg"
+            alt="Standard room at Hilbert's Hotel"
+          />
+        </figure>
+        <p class="is-size-7">
+          Photo by <a
+            href="https://unsplash.com/@3dottawa?utm_content=creditCopyText&utm_medium=referral&utm_source=unsplash"
+            target="_blank">Point3D Commercial Imaging Ltd.</a
+          >
+          on
+          <a
+            href="https://unsplash.com/photos/white-bed-linen-on-bed-oxeCZrodz78?utm_content=creditCopyText&utm_medium=referral&utm_source=unsplash"
+            target="_blank">Unsplash</a
+          >
+        </p>
+      </div>
+    </div>
   </div>
 </section>

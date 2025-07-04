@@ -162,112 +162,88 @@
   let loading: boolean = $state(false);
 </script>
 
-<h1 class="title">Welcome to Hilbert's Hotel</h1>
-<h2 class="subtitle">The world's best hotel with infinite rooms</h2>
+{#if err}
+  <article class="message is-danger">
+    <div class="message-header">Error</div>
+    <div class="message-body">{err}</div>
+  </article>
+{/if}
 
-<div class="columns">
-  <div class="column is-half">
-    {#if err}
-      <article class="message is-danger">
-        <div class="message-header">Error</div>
-        <div class="message-body">{err}</div>
-      </article>
-    {/if}
-
-    <div class="field">
-      <label class="label" for="checkin">Check-in date</label>
-      <div class="control">
-        <input
-          class="input"
-          type="date"
-          id="checkin"
-          name="checkin"
-          min={minDate.toISODate()}
-          bind:value={checkin}
-          required
-          onchange={() => {
-            minCheckoutDate = calculateMinCheckoutDate(checkin);
-            rates = calculateRates(checkin, checkout);
-          }}
-        />
-      </div>
-    </div>
-
-    <div class="field">
-      <label class="label" for="checkout">Check-out date</label>
-      <div class="control">
-        <input
-          class="input"
-          type="date"
-          id="checkout"
-          name="checkout"
-          min={minCheckoutDate}
-          bind:value={checkout}
-          required
-          onchange={() => {
-            rates = calculateRates(checkin, checkout);
-          }}
-        />
-      </div>
-    </div>
-
-    {#if rates.length > 0}
-      <div class="card">
-        <div class="card-content">
-          <p class="is-size-4 has-text-weight-semibold pb-4">Rates</p>
-          {#each rates as rate (rate.id)}
-            <div class="columns is-vcentered">
-              <div class="column">
-                <p class="is-size-5 has-text-weight-semibold">
-                  {rate.name}
-                </p>
-                <p>{rate.description}</p>
-              </div>
-              <div class="column is-3 has-text-right">
-                <p class="has-text-weight-semibold">
-                  &pound;{rate.totalInPence / 100}
-                </p>
-                {#if rate.discount > 0}
-                  <p class="has-text-danger">
-                    -{rate.discount}%
-                  </p>
-                {/if}
-              </div>
-              <div class="column is-narrow">
-                <div class="field">
-                  <div class="control">
-                    <button
-                      type="submit"
-                      onclick={() => submit(rate)}
-                      class="button is-link"
-                      class:is-loading={loading}
-                    >
-                      Book
-                    </button>
-                  </div>
-                </div>
-              </div>
-            </div>
-          {/each}
-        </div>
-      </div>
-    {/if}
-  </div>
-
-  <div class="column is-half">
-    <figure class="image is-3-by-2">
-      <img src="/img/hotel-room.jpg" alt="Standard room at Hilbert's Hotel" />
-    </figure>
-    <p class="is-size-7">
-      Photo by <a
-        href="https://unsplash.com/@3dottawa?utm_content=creditCopyText&utm_medium=referral&utm_source=unsplash"
-        target="_blank">Point3D Commercial Imaging Ltd.</a
-      >
-      on
-      <a
-        href="https://unsplash.com/photos/white-bed-linen-on-bed-oxeCZrodz78?utm_content=creditCopyText&utm_medium=referral&utm_source=unsplash"
-        target="_blank">Unsplash</a
-      >
-    </p>
+<div class="field">
+  <label class="label" for="checkin">Check-in date</label>
+  <div class="control">
+    <input
+      class="input"
+      type="date"
+      id="checkin"
+      name="checkin"
+      min={minDate.toISODate()}
+      bind:value={checkin}
+      required
+      onchange={() => {
+        minCheckoutDate = calculateMinCheckoutDate(checkin);
+        rates = calculateRates(checkin, checkout);
+      }}
+    />
   </div>
 </div>
+
+<div class="field">
+  <label class="label" for="checkout">Check-out date</label>
+  <div class="control">
+    <input
+      class="input"
+      type="date"
+      id="checkout"
+      name="checkout"
+      min={minCheckoutDate}
+      bind:value={checkout}
+      required
+      onchange={() => {
+        rates = calculateRates(checkin, checkout);
+      }}
+    />
+  </div>
+</div>
+
+{#if rates.length > 0}
+  <div class="card">
+    <div class="card-content">
+      <p class="is-size-4 has-text-weight-semibold pb-4">Rates</p>
+      {#each rates as rate (rate.id)}
+        <div class="columns is-vcentered">
+          <div class="column">
+            <p class="is-size-5 has-text-weight-semibold">
+              {rate.name}
+            </p>
+            <p>{rate.description}</p>
+          </div>
+          <div class="column is-3 has-text-right">
+            <p class="has-text-weight-semibold">
+              &pound;{rate.totalInPence / 100}
+            </p>
+            {#if rate.discount > 0}
+              <p class="has-text-danger">
+                -{rate.discount}%
+              </p>
+            {/if}
+          </div>
+          <div class="column is-narrow">
+            <div class="field">
+              <div class="control">
+                <button
+                  type="submit"
+                  onclick={() => submit(rate)}
+                  class="button is-link"
+                  class:is-loading={loading}
+                >
+                  Book
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      {/each}
+    </div>
+  </div>
+{/if}
