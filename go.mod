@@ -3,6 +3,7 @@ module github.com/mrsimonemms/temporal-hotel-bookings
 go 1.24.2
 
 require (
+	github.com/google/uuid v1.6.0
 	go.temporal.io/api v1.50.0
 	go.temporal.io/sdk v1.34.0
 )
@@ -12,7 +13,6 @@ require (
 	github.com/facebookgo/clock v0.0.0-20150410010913-600d898af40a // indirect
 	github.com/gogo/protobuf v1.3.2 // indirect
 	github.com/golang/mock v1.6.0 // indirect
-	github.com/google/uuid v1.6.0 // indirect
 	github.com/grpc-ecosystem/go-grpc-middleware v1.4.0 // indirect
 	github.com/grpc-ecosystem/grpc-gateway/v2 v2.27.0 // indirect
 	github.com/nexus-rpc/sdk-go v0.4.0 // indirect

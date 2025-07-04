@@ -16,7 +16,7 @@
 
 import { ensureDB } from '$lib/server/db';
 import { ensureConnection } from '$lib/server/temporal';
-import { json } from '@sveltejs/kit';
+import { error, json } from '@sveltejs/kit';
 import { nanoid } from 'nanoid';
 import type { RequestHandler } from './$types';
 
@@ -58,4 +58,41 @@ export const POST: RequestHandler = async ({ request }) => {
   await db.write();
 
   return json(booking);
+};
+
+export const PUT: RequestHandler = async ({ request }) => {
+  const temporal = await ensureConnection();
+  const db = await ensureDB();
+
+  const data = await request.json();
+  const bookingId = db.data.bookings.findIndex(({ id }) => data.id === id);
+
+  if (!bookingId) {
+    return error(400, 'Unknown booking');
+  }
+
+  const booking = db.data.bookings[bookingId];
+
+  const handle = temporal.workflow.getHandle(`${booking.temporalId}_payment`);
+  try {
+    // Validate the handle
+    await handle.describe();
+
+    // Trigger the check-in signal
+    await handle.signal('check-in');
+
+    // Wait for the result
+    const res = await handle.result();
+
+    db.data.bookings[bookingId] = {
+      ...booking,
+      isPaid: true,
+    };
+    await db.write();
+
+    return json(res);
+  } catch (err: unknown) {
+    console.error(err);
+    return error(400, (err as Error)?.message ?? 'Unknown error');
+  }
 };
