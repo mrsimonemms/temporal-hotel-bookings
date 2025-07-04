@@ -14,20 +14,35 @@
  * limitations under the License.
  */
 
-import { ensureDB } from '$lib/server/db';
-import { ensureConnection } from '$lib/server/temporal';
-import type { ServerInit } from '@sveltejs/kit';
-import process from 'node:process';
+import { Low } from 'lowdb';
+import { JSONFilePreset } from 'lowdb/node';
 
-export const init: ServerInit = async () => {
-  console.log('Connecting to Temporal service');
-  const temporal = await ensureConnection();
-
-  console.log('Connecting to database');
-  await ensureDB();
-
-  process.on('sveltekit:shutdown', async () => {
-    console.log('Closing Temporal connection');
-    await temporal.connection.close();
-  });
+export type Booking = {
+  id: string;
+  temporalId: string;
+  paymentDate: Date;
+  totalCostPence: number;
+  payOnCheckIn: boolean;
+  prePaymentDate: boolean;
+  isPaid: boolean;
+  checkIn: Date;
+  checkOut: Date;
 };
+
+export type Data = {
+  bookings: Booking[];
+};
+
+// Handle singleton
+let db: Low<Data>;
+
+export async function ensureDB(): Promise<Low<Data>> {
+  if (!db) {
+    const defaultData: Data = { bookings: [] };
+
+    db = await JSONFilePreset('db.json', defaultData);
+    await db.write();
+  }
+
+  return db;
+}

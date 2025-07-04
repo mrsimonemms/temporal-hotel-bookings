@@ -14,21 +14,48 @@
  * limitations under the License.
  */
 
+import { ensureDB } from '$lib/server/db';
 import { ensureConnection } from '$lib/server/temporal';
 import { json } from '@sveltejs/kit';
 import { nanoid } from 'nanoid';
 import type { RequestHandler } from './$types';
 
+interface Booking {
+  bookingId: string;
+  hotelId: string;
+  paymentDate: Date;
+}
+
 export const POST: RequestHandler = async ({ request }) => {
   const temporal = await ensureConnection();
+  const db = await ensureDB();
 
   const data = await request.json();
 
-  const handle = await temporal.workflow.start('BookHotel', {
+  const workflowId = `book-${nanoid()}`;
+
+  const handle = await temporal.workflow.start<
+    (data: unknown) => Promise<Booking>
+  >('BookHotel', {
     taskQueue: 'hotel-bookings',
     args: [data],
-    workflowId: `book-${nanoid()}`,
+    workflowId,
   });
 
-  return json(await handle.result());
+  const booking = await handle.result();
+
+  db.data.bookings.push({
+    id: booking.bookingId,
+    temporalId: workflowId,
+    paymentDate: new Date(booking.paymentDate),
+    totalCostPence: data.totalCostInPence,
+    payOnCheckIn: data.payOnCheckIn,
+    prePaymentDate: data.prePaymentDate,
+    isPaid: data.payOnCheckIn,
+    checkIn: data.checkInDate,
+    checkOut: data.checkOutDate,
+  });
+  await db.write();
+
+  return json(booking);
 };
