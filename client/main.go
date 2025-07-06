@@ -59,7 +59,7 @@ func main() {
 				return time.Date(target.Year(), target.Month(), target.Day(), 11, 0, 0, 0, time.UTC)
 			}(),
 			PayOnCheckIn:   false,
-			PrePaymentDate: time.Now().Add(time.Minute), // This rate is only available with immediate payment
+			PrePaymentDate: time.Now(), // This rate is only available with immediate payment
 
 			// This is a demo. Do **NOT** use your real card details.
 			CardDetails: temporalhotelbookings.CardDetails{

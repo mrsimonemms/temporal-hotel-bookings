@@ -17,7 +17,6 @@
 package temporalhotelbookings
 
 import (
-	"errors"
 	"fmt"
 	"time"
 
@@ -85,6 +84,8 @@ func PayHotel(ctx workflow.Context, data *PayHotelInput) (*PayHotelResult, error
 	logger := workflow.GetLogger(ctx)
 	logger.Info("Paying for hotel")
 
+	var a *activities
+
 	ctx = workflow.WithActivityOptions(ctx, workflow.ActivityOptions{
 		ScheduleToCloseTimeout: time.Minute,
 	})
@@ -96,7 +97,7 @@ func PayHotel(ctx workflow.Context, data *PayHotelInput) (*PayHotelResult, error
 
 	// Configure a signal to cancel the timer
 	channel := workflow.GetSignalChannel(ctx, "check-in")
-	selector.AddReceive(channel, func(c workflow.ReceiveChannel, more bool) {
+	selector.AddReceive(channel, func(c workflow.ReceiveChannel, _ bool) {
 		// Run the receiver to clear the signal - we don't receive any data
 		c.Receive(ctx, nil)
 
@@ -104,30 +105,46 @@ func PayHotel(ctx workflow.Context, data *PayHotelInput) (*PayHotelResult, error
 		cancelHandler()
 	})
 
-	// Activate the selectors
-	selector.Select(ctx)
-
 	// Calculate the delay until payment is taken
 	t := time.Now().UTC()
 	delay := max(data.PaymentDate.UTC().Sub(t), 0)
 	logger.Info("Delaying workflow", "time", data.PaymentDate, "delay", delay)
 
-	// Activate the sleep
-	if err := workflow.Sleep(timerCtx, delay); err != nil {
-		// Allow sleep to be cancelled
-		if !errors.Is(err, workflow.ErrCanceled) {
-			logger.Error("Error sleeping payment")
-			return nil, fmt.Errorf("error sleeping payment: %w", err)
-		}
-	}
-
-	var a *activities
+	fmt.Println("===")
+	fmt.Println(t)
+	fmt.Println(data.PaymentDate.UTC())
+	fmt.Println(delay)
+	fmt.Println("===")
 
 	var result *PayHotelResult
-	if err := workflow.ExecuteActivity(ctx, a.PayHotel, data).Get(ctx, &result); err != nil {
-		logger.Error("Error paying hotel", "error", err)
-		return nil, fmt.Errorf("error paying hotel: %w", err)
-	}
+
+	// Activate the sleep
+	// @link https://community.temporal.io/t/sleep-with-cancel/1834
+	timerFuture := workflow.NewTimer(timerCtx, delay)
+	selector.AddFuture(timerFuture, func(f workflow.Future) {
+		if err := workflow.ExecuteActivity(ctx, a.PayHotel, data).Get(ctx, &result); err != nil {
+			fmt.Println(err)
+		}
+		// if err := workflow.ExecuteActivity(ctx, a.PayHotel, data).Get(ctx, &result); err != nil {
+		// 	logger.Error("Error paying hotel", "error", err)
+		// 	return nil, fmt.Errorf("error paying hotel: %w", err)
+		// }
+	})
+	// if err := workflow.Sleep(timerCtx, delay); err != nil {
+	// 	// Allow sleep to be cancelled
+	// 	if !errors.Is(err, workflow.ErrCanceled) {
+	// 		logger.Error("Error sleeping payment")
+	// 		return nil, fmt.Errorf("error sleeping payment: %w", err)
+	// 	}
+	// }
+
+	// Activate the selectors
+	selector.Select(ctx)
+
+	fmt.Println("---")
+	fmt.Println("hello")
+	fmt.Println(result)
+	fmt.Println("---")
 
 	return result, nil
 }
