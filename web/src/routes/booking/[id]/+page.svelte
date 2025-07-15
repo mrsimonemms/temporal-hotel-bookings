@@ -52,6 +52,7 @@
 
 <div class="content">
   <p>Thanks for your booking</p>
+  <p>Ref: {data.booking.id}</p>
   <dl>
     <dt>Check-in Date:</dt>
     <dd>
