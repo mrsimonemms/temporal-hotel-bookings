@@ -82,9 +82,7 @@
           description: 'Pay now.',
           totalInPence: dailyPriceInPence * 0.8 * stayInDays, // Offer 20% discount
           discount: 20,
-          prePaymentDate: DateTime.now()
-            .set({ hour: 15, minute: 0, second: 0, millisecond: 0 })
-            .toJSDate(),
+          prePaymentDate: DateTime.now().toJSDate(),
         },
       ],
     );
