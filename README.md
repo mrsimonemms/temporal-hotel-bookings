@@ -35,12 +35,14 @@ To achieve this, we have a couple of Temporal workflows:
 * `BookHotel`: this makes the booking with the hotel, taking booking, customer
   and payment details. This returns the booking ID and the date when payment will
   been taken, depending upon the level of discount the customer has chosen. This
-  then triggers the payment as an orphaned child workflow.
+  then sends a confirmation message to the customer and then triggers the payment
+  as an orphaned child workflow.
 * `PayHotel`: this checks the guest in and makes the payment. If the customer
   has opted for 20% discount, this will be run immediately. If they have selected
   0%/10% discount, this workflow sleeps until the desired time is reached when
   it will run. This also listens for a `check-in` signal so that the hotelier
   can check the customer in early, should they arrive before the timer expires.
+  A confirmation is also sent to the customer.
 
 By design, all actions in the workflows are unreliable, with a one-in-three chance
 of failing. This is done to demonstrate Temporal's retry configuration and how
@@ -73,6 +75,12 @@ This requires:
    cd web
    npm ci
    npm run dev
+   ```
+
+1. You can also run a lot of bookings in one go (optional):
+
+   ```sh
+   go run ./client 1000
    ```
 
 Now you can open the [Temporal UI](http://localhost:8233) and the [web app](http://localhost:5173)

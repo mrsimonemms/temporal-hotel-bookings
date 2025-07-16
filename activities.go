@@ -65,6 +65,19 @@ func (a *activities) ReserveHotel(ctx context.Context, data *ReserveHotelInput) 
 	}, nil
 }
 
+func (a *activities) SendConfirmation(ctx context.Context, data *SendConfirmationInput) (*SendConfirmationOutput, error) {
+	logger := activity.GetLogger(ctx)
+	logger.Info("Send confirmation", "bookingId", data.BookingID)
+
+	// Simulate a time delay
+	time.Sleep((time.Second))
+
+	logger.Info("Confirmation sent")
+	return &SendConfirmationOutput{
+		TransactionID: uuid.NewString(),
+	}, nil
+}
+
 func NewActivities() (*activities, error) {
 	return &activities{}, nil
 }

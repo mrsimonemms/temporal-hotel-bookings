@@ -21,6 +21,7 @@ import (
 	"time"
 
 	"go.temporal.io/api/enums/v1"
+	"go.temporal.io/sdk/temporal"
 	"go.temporal.io/sdk/workflow"
 )
 
@@ -29,7 +30,13 @@ func BookHotel(ctx workflow.Context, data *BookHotelWorkflowInput) (*BookHotelWo
 	logger.Info("Running workflow")
 
 	ctx = workflow.WithActivityOptions(ctx, workflow.ActivityOptions{
-		ScheduleToCloseTimeout: time.Minute,
+		ScheduleToCloseTimeout: time.Minute * 5,
+		RetryPolicy: &temporal.RetryPolicy{
+			InitialInterval:    time.Second,
+			BackoffCoefficient: 1.0,
+			MaximumInterval:    time.Second,
+			MaximumAttempts:    0,
+		},
 	})
 
 	var a *activities
@@ -48,6 +55,15 @@ func BookHotel(ctx workflow.Context, data *BookHotelWorkflowInput) (*BookHotelWo
 	paymentDate := data.CheckInDate
 	if !data.PayOnCheckIn {
 		paymentDate = data.PrePaymentDate
+	}
+
+	var confirmation *SendConfirmationOutput
+	if err := workflow.ExecuteActivity(ctx, a.SendConfirmation, SendConfirmationInput{
+		BookingID: reserveHotelResult.BookingID,
+		Type:      ConfirmationTypeBooking,
+	}).Get(ctx, &confirmation); err != nil {
+		logger.Error("Error sending confirmation", "error", err)
+		return nil, fmt.Errorf("error sending confirmation: %w", err)
 	}
 
 	// The payment is a child workflow that is decoupled from the booking workflow.
@@ -85,7 +101,13 @@ func PayHotel(ctx workflow.Context, data *PayHotelInput) (*PayHotelResult, error
 	logger.Info("Paying for hotel")
 
 	ctx = workflow.WithActivityOptions(ctx, workflow.ActivityOptions{
-		ScheduleToCloseTimeout: time.Minute,
+		ScheduleToCloseTimeout: time.Minute * 5,
+		RetryPolicy: &temporal.RetryPolicy{
+			InitialInterval:    time.Second,
+			BackoffCoefficient: 1.0,
+			MaximumInterval:    time.Second,
+			MaximumAttempts:    0,
+		},
 	})
 
 	timerCtx, cancelHandler := workflow.WithCancel(ctx)
@@ -123,6 +145,15 @@ func PayHotel(ctx workflow.Context, data *PayHotelInput) (*PayHotelResult, error
 	if err := workflow.ExecuteActivity(ctx, a.PayHotel, data).Get(ctx, &result); err != nil {
 		logger.Error("Error paying hotel", "error", err)
 		return nil, fmt.Errorf("error paying hotel: %w", err)
+	}
+
+	var confirmation *SendConfirmationOutput
+	if err := workflow.ExecuteActivity(ctx, a.SendConfirmation, SendConfirmationInput{
+		BookingID: data.BookingID,
+		Type:      ConfirmationTypePayment,
+	}).Get(ctx, &confirmation); err != nil {
+		logger.Error("Error sending confirmation", "error", err)
+		return nil, fmt.Errorf("error sending confirmation: %w", err)
 	}
 
 	return result, nil

@@ -14,16 +14,30 @@
  * limitations under the License.
  */
 
+// This is a way of running lots of bookings and check-ins concurrently.
+// This defaults to 100 concurrent bookings, but can be configured by passing a
+// number through as the first command line argument.
+//
+// This creates a booking, waits for a few seconds then checks the customer in
+
 package main
 
 import (
 	"context"
+	"fmt"
 	"log"
+	"os"
+	"strconv"
 	"time"
 
 	temporalhotelbookings "github.com/mrsimonemms/temporal-hotel-bookings"
 	"go.temporal.io/sdk/client"
 )
+
+type future struct {
+	ctx      context.Context
+	workflow client.WorkflowRun
+}
 
 func main() {
 	// The client is a heavyweight object that should be created once per process.
@@ -37,52 +51,86 @@ func main() {
 		TaskQueue: "hotel-bookings",
 	}
 
-	now := time.Now().UTC()
+	// Default to 100 runs, but receive number from first input arg
+	count := 100
+	if len(os.Args) >= 2 {
+		i, err := strconv.Atoi(os.Args[1])
+		if err != nil {
+			//nolint:gocritic
+			log.Fatalln("Error converting number", err)
+		}
+		count = i
+	}
 
-	ctx := context.Background()
+	futures := make([]future, 0)
 
-	we, err := c.ExecuteWorkflow(
-		ctx,
-		workflowOptions,
-		temporalhotelbookings.BookHotel,
-		&temporalhotelbookings.BookHotelWorkflowInput{
-			HotelID:          "12345", // Arbitrary hotel ID
-			TotalCostInPence: 18999,   // Total cost £189.99
-			CheckInDate: func() time.Time {
-				// Set check-in to one week in the future at 15:00
-				target := now.Add(time.Hour * 24 * 7)
-				return time.Date(target.Year(), target.Month(), target.Day(), 15, 0, 0, 0, time.UTC)
-			}(),
-			CheckOutDate: func() time.Time {
-				// Set check-in to 8 days in the future at 11:00
-				target := now.Add(time.Hour * 24 * 8)
-				return time.Date(target.Year(), target.Month(), target.Day(), 11, 0, 0, 0, time.UTC)
-			}(),
-			PayOnCheckIn:   false,
-			PrePaymentDate: time.Now().Add(time.Minute), // This rate is only available with immediate payment
+	for range count {
+		now := time.Now().UTC()
 
-			// This is a demo. Do **NOT** use your real card details.
-			CardDetails: temporalhotelbookings.CardDetails{
-				Number:       "5555555555554444",
-				ExpiryMonth:  1,
-				ExpiryYear:   now.Year() + 3,
-				SecurityCode: 123,
+		ctx := context.Background()
+
+		we, err := c.ExecuteWorkflow(
+			ctx,
+			workflowOptions,
+			temporalhotelbookings.BookHotel,
+			&temporalhotelbookings.BookHotelWorkflowInput{
+				HotelID:          "12345", // Arbitrary hotel ID
+				TotalCostInPence: 18999,   // Total cost £189.99
+				CheckInDate: func() time.Time {
+					// Set check-in to one week in the future at 15:00
+					target := now.Add(time.Hour * 24 * 7)
+					return time.Date(target.Year(), target.Month(), target.Day(), 15, 0, 0, 0, time.UTC)
+				}(),
+				CheckOutDate: func() time.Time {
+					// Set check-in to 8 days in the future at 11:00
+					target := now.Add(time.Hour * 24 * 8)
+					return time.Date(target.Year(), target.Month(), target.Day(), 11, 0, 0, 0, time.UTC)
+				}(),
+				PayOnCheckIn:   false,
+				PrePaymentDate: time.Now().Add(time.Hour),
+
+				// This is a demo. Do **NOT** use your real card details.
+				CardDetails: temporalhotelbookings.CardDetails{
+					Number:       "5555555555554444",
+					ExpiryMonth:  1,
+					ExpiryYear:   now.Year() + 3,
+					SecurityCode: 123,
+				},
 			},
-		},
-	)
-	if err != nil {
-		//nolint:gocritic
-		log.Fatalln("Unable to execute workflow", err)
+		)
+		if err != nil {
+			log.Fatalln("Unable to execute workflow", err)
+		}
+		futures = append(futures, future{
+			ctx:      ctx,
+			workflow: we,
+		})
+
+		log.Println("Started workflow", "WorkflowID", we.GetID(), "RunID", we.GetRunID())
 	}
 
-	log.Println("Started workflow", "WorkflowID", we.GetID(), "RunID", we.GetRunID())
-
-	// Synchronously wait for the workflow completion.
-	var result temporalhotelbookings.BookHotelWorkflowResult
-	err = we.Get(ctx, &result)
-	if err != nil {
-		log.Fatalln("Unable get workflow result", err)
+	for _, f := range futures {
+		// Synchronously wait for the workflow completion.
+		var result temporalhotelbookings.BookHotelWorkflowResult
+		err = f.workflow.Get(f.ctx, &result)
+		if err != nil {
+			log.Fatalln("Unable get workflow result", err)
+		}
+		log.Printf("Workflow result: %+v", result)
+		log.Printf("Payment will be taken on %s", result.PaymentDate)
 	}
-	log.Printf("Workflow result: %+v", result)
-	log.Printf("Payment will be taken on %s", result.PaymentDate)
+
+	fmt.Println("Sleeping before check-in")
+
+	time.Sleep(time.Second * 15)
+
+	for _, f := range futures {
+		workflowID := fmt.Sprintf("%s_payment", f.workflow.GetID())
+		err = c.SignalWorkflow(f.ctx, workflowID, "", "check-in", nil)
+		if err != nil {
+			log.Fatalf("Unable to signal workflow: %v", err)
+		}
+	}
+
+	fmt.Println("Everyone checked-in - have a lovely stay")
 }

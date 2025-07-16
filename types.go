@@ -65,3 +65,19 @@ type ReserveHotelInput struct {
 type ReserveHotelResult struct {
 	BookingID string `json:"bookingId"`
 }
+
+type ConfirmationType string
+
+const (
+	ConfirmationTypeBooking = "booking"
+	ConfirmationTypePayment = "payment"
+)
+
+type SendConfirmationInput struct {
+	BookingID string           `json:"bookingId"`
+	Type      ConfirmationType `json:"type"`
+}
+
+type SendConfirmationOutput struct {
+	TransactionID string `json:"transactionId"`
+}
